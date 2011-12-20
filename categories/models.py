@@ -74,6 +74,11 @@ class Category(MPTTModel):
             return self.alternate_url
         prefix = reverse('categories_tree_list')
         ancestors = list(self.get_ancestors()) + [self,]
+
+        # remove top-level category from display
+        if len(ancestors) > 0:
+            del ancestors[0]
+
         return prefix + '/'.join([force_unicode(i.slug) for i in ancestors]) + '/'
     
     if RELATION_MODELS:
