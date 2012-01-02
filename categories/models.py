@@ -40,7 +40,7 @@ class Category(MPTTModel):
     thumbnail_width = models.IntegerField(blank=True, null=True)
     thumbnail_height = models.IntegerField(blank=True, null=True)
     order = models.IntegerField(blank=True, null=True)
-    slug = models.SlugField()
+    slug = models.SlugField(db_index=True)
     alternate_title = models.CharField(
         blank=True,
         default="",
@@ -61,7 +61,11 @@ class Category(MPTTModel):
         default="",
         help_text="(Advanced) Any additional HTML to be placed verbatim in the &lt;head&gt;")
     active = models.BooleanField(default=True)
-    
+
+    show_converser_ad = models.BooleanField("Show a converser ad?", default=False,
+        help_text="Select to enable a converser ad for the category page.  A 600x300 converser ad unit must be " \
+                  "active in Dart.")
+
     objects = CategoryManager()
     
     @property
