@@ -135,10 +135,10 @@ class Category(MPTTModel):
     
     def __unicode__(self):
         ancestors = self.get_ancestors()
-
         # remove top-level category from display
+        # added hack to show "magazine" in the section title
         ancestors_list = list(ancestors)
-        if len(ancestors_list) > 0:
+        if len(ancestors_list) > 0 and not ancestors_list[0].slug == "magazine":
             del ancestors_list[0]
 
         return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
