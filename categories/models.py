@@ -12,7 +12,15 @@ from mptt.models import MPTTModel
 from settings import (RELATION_MODELS, RELATIONS, THUMBNAIL_UPLOAD_PATH, 
                         THUMBNAIL_STORAGE)
 
+from django.db import transaction
+
 STORAGE = get_storage_class(THUMBNAIL_STORAGE)
+
+
+@transaction.commit_manually
+def flush_transaction():
+    transaction.commit()
+
 
 class CategoryManager(models.Manager):
     """
@@ -67,7 +75,22 @@ class Category(MPTTModel):
                   "active in Dart.")
 
     objects = CategoryManager()
-    
+
+    @property
+    def display_converser(self):
+        """
+        This method flushes the database cache to get the current value of the "show_converser_ad" field
+        """
+        if not hasattr(self, '_uncached_show_converser_ad'):
+            flush_transaction()
+            uncached_show_converser_ad_list = Category.objects.values('show_converser_ad').filter(id=self.id)
+            if len(uncached_show_converser_ad_list) > 0:
+                if uncached_show_converser_ad_list[0]['show_converser_ad']:
+                    self._uncached_show_converser_ad = True
+                else:
+                    self._uncached_show_converser_ad = False
+        return self._uncached_show_converser_ad
+
     @property
     def short_title(self):
         return self.name
