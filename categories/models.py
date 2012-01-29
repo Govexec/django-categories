@@ -40,14 +40,14 @@ class Category(MPTTModel):
         help_text="Leave this blank for an Category Tree", 
         verbose_name='Parent')
     name = models.CharField(max_length=100)
-    is_blog = models.BooleanField()
+    is_blog = models.BooleanField(db_index=True)
     thumbnail = models.FileField(
         upload_to=THUMBNAIL_UPLOAD_PATH, 
         null=True, blank=True,
         storage=STORAGE(),)
     thumbnail_width = models.IntegerField(blank=True, null=True)
     thumbnail_height = models.IntegerField(blank=True, null=True)
-    order = models.IntegerField(blank=True, null=True)
+    order = models.IntegerField(db_index=True, blank=True, null=True)
     slug = models.SlugField(db_index=True)
     alternate_title = models.CharField(
         blank=True,
