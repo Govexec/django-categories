@@ -13,7 +13,15 @@ from mptt.models import MPTTModel
 from settings import (RELATION_MODELS, RELATIONS, THUMBNAIL_UPLOAD_PATH, 
                         THUMBNAIL_STORAGE)
 
+from django.db import transaction
+
 STORAGE = get_storage_class(THUMBNAIL_STORAGE)
+
+
+@transaction.commit_manually
+def flush_transaction():
+    transaction.commit()
+
 
 class CategoryManager(models.Manager):
     """
@@ -33,14 +41,14 @@ class Category(caching.base.CachingMixin, MPTTModel):
         help_text="Leave this blank for an Category Tree", 
         verbose_name='Parent')
     name = models.CharField(max_length=100)
-    is_blog = models.BooleanField()
+    is_blog = models.BooleanField(db_index=True)
     thumbnail = models.FileField(
         upload_to=THUMBNAIL_UPLOAD_PATH, 
         null=True, blank=True,
         storage=STORAGE(),)
     thumbnail_width = models.IntegerField(blank=True, null=True)
     thumbnail_height = models.IntegerField(blank=True, null=True)
-    order = models.IntegerField(blank=True, null=True)
+    order = models.IntegerField(db_index=True, blank=True, null=True)
     slug = models.SlugField(db_index=True)
     alternate_title = models.CharField(
         blank=True,
@@ -72,7 +80,22 @@ class Category(caching.base.CachingMixin, MPTTModel):
     root_category_slug = models.CharField(blank=True, max_length=200)
 
     objects = CategoryManager()
-    
+
+    @property
+    def display_converser(self):
+        """
+        This method flushes the database cache to get the current value of the "show_converser_ad" field
+        """
+        if not hasattr(self, '_uncached_show_converser_ad'):
+            flush_transaction()
+            uncached_show_converser_ad_list = Category.objects.values('show_converser_ad').filter(id=self.id)
+            if len(uncached_show_converser_ad_list) > 0:
+                if uncached_show_converser_ad_list[0]['show_converser_ad']:
+                    self._uncached_show_converser_ad = True
+                else:
+                    self._uncached_show_converser_ad = False
+        return self._uncached_show_converser_ad
+
     @property
     def short_title(self):
         return self.name
@@ -156,6 +179,7 @@ class Category(caching.base.CachingMixin, MPTTModel):
 				del ancestors_list[0]
 	
 			return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
+
 
 if RELATION_MODELS:
     category_relation_limits = reduce(lambda x,y: x|y, RELATIONS)

@@ -83,7 +83,7 @@ class CategoryAdmin(TreeEditor, admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     fieldsets = (
         (None, {
-            'fields': ('parent', 'name', 'is_blog', 'thumbnail', 'active')
+            'fields': ('parent', 'name', 'is_blog', 'thumbnail', 'active',)
         }),
         ('Meta Data', {
             'fields': ('alternate_title', 'alternate_url', 'description', 
@@ -91,7 +91,7 @@ class CategoryAdmin(TreeEditor, admin.ModelAdmin):
             'classes': ('collapse',),
         }),
         ('Advanced', {
-            'fields': ('order', 'slug'),
+            'fields': ('order', 'slug', 'show_converser_ad',),
             'classes': ('collapse',),
         }),
     )
