@@ -74,10 +74,6 @@ class Category(caching.base.CachingMixin, MPTTModel):
     show_converser_ad = models.BooleanField("Show a converser ad?", default=False,
         help_text="Select to enable a converser ad for the category page.  A 600x300 converser ad unit must be " \
                   "active in Dart.")
-                  
-    absolute_url = models.URLField(blank=True)
-    unicode = models.CharField(blank=True, max_length=200)
-    root_category_slug = models.CharField(blank=True, max_length=200)
 
     objects = CategoryManager()
 
@@ -101,12 +97,6 @@ class Category(caching.base.CachingMixin, MPTTModel):
         return self.name
     
     def get_absolute_url(self):
-        if self.absolute_url:
-            return self.absolute_url
-        else:
-            return self.get_path()
-
-    def get_path(self):        
         """Return a path"""
         if self.alternate_url:
             return self.alternate_url
@@ -168,17 +158,14 @@ class Category(caching.base.CachingMixin, MPTTModel):
         order_insertion_by = 'name'
     
     def __unicode__(self):
-        if self.unicode:
-            return self.unicode
-        else:
-			ancestors = self.get_ancestors()
-	
-			# remove top-level category from display
-			ancestors_list = list(ancestors)
-			if len(ancestors_list) > 0:
-				del ancestors_list[0]
-	
-			return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
+        ancestors = self.get_ancestors()
+
+        # remove top-level category from display
+        ancestors_list = list(ancestors)
+        if len(ancestors_list) > 0:
+            del ancestors_list[0]
+
+        return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
 
 
 if RELATION_MODELS:
