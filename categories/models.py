@@ -33,7 +33,7 @@ class CategoryManager(models.Manager):
         """
         return self.get_query_set().filter(active=True)
 
-class Category(caching.base.CachingMixin, MPTTModel):
+class Category(MPTTModel):
     parent = models.ForeignKey('self', 
         blank=True, 
         null=True, 
@@ -159,13 +159,15 @@ class Category(caching.base.CachingMixin, MPTTModel):
     
     def __unicode__(self):
         ancestors = self.get_ancestors()
+
         # remove top-level category from display
-        # added hack to show "magazine" in the section title
         ancestors_list = list(ancestors)
+        # added hack to show "magazine" in the section title
         if len(ancestors_list) > 0 and not ancestors_list[0].slug == "magazine":
             del ancestors_list[0]
 
         return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
+
 
 if RELATION_MODELS:
     category_relation_limits = reduce(lambda x,y: x|y, RELATIONS)
