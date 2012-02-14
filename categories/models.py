@@ -33,7 +33,7 @@ class CategoryManager(models.Manager):
         """
         return self.get_query_set().filter(active=True)
 
-class Category(caching.base.CachingMixin, MPTTModel):
+class Category(MPTTModel):
     parent = models.ForeignKey('self', 
         blank=True, 
         null=True, 
