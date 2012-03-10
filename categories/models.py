@@ -75,6 +75,11 @@ class Category(MPTTModel):
         help_text="Select to enable a converser ad for the category page.  A 600x300 converser ad unit must be " \
                   "active in Dart.")
 
+    unicode_name = models.CharField(
+        blank=True,
+        default=None,
+        max_length=255)
+
     objects = CategoryManager()
 
     @property
@@ -158,6 +163,14 @@ class Category(MPTTModel):
         order_insertion_by = 'name'
     
     def __unicode__(self):
+
+        if self.unicode_name:
+            return self.unicode_name
+
+        return self.generate_unicode_name()
+
+    def generate_unicode_name(self):
+
         ancestors = self.get_ancestors()
 
         # remove top-level category from display
