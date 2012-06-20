@@ -6,7 +6,6 @@ from django.contrib.contenttypes import generic
 from django.core.files.storage import get_storage_class
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
-import caching.base
 
 from mptt.models import MPTTModel
 
@@ -33,7 +32,7 @@ class CategoryManager(models.Manager):
         """
         return self.get_query_set().filter(active=True)
 
-class Category(caching.base.CachingMixin, MPTTModel):
+class Category(MPTTModel):
     parent = models.ForeignKey('self', 
         blank=True, 
         null=True, 
@@ -56,8 +55,8 @@ class Category(caching.base.CachingMixin, MPTTModel):
         max_length=100,
         help_text="An alternative title to use on pages with this category.")
     alternate_url = models.URLField(
-        blank=True, 
-        verify_exists=False, 
+        blank=True,
+        verify_exists=False,
         help_text="An alternative URL to use instead of the one derived from the category hierarchy.")
     description = models.TextField(blank=True, null=True)
     meta_keywords = models.CharField(
@@ -74,6 +73,11 @@ class Category(caching.base.CachingMixin, MPTTModel):
     show_converser_ad = models.BooleanField("Show a converser ad?", default=False,
         help_text="Select to enable a converser ad for the category page.  A 600x300 converser ad unit must be " \
                   "active in Dart.")
+
+    unicode_name = models.CharField(
+        blank=True,
+        default=None,
+        max_length=255)
 
     objects = CategoryManager()
 
@@ -158,12 +162,22 @@ class Category(caching.base.CachingMixin, MPTTModel):
         order_insertion_by = 'name'
     
     def __unicode__(self):
+
+        if self.unicode_name:
+            return self.unicode_name
+
+        return self.generate_unicode_name()
+
+    def generate_unicode_name(self):
+
         ancestors = self.get_ancestors()
 
         # remove top-level category from display
         ancestors_list = list(ancestors)
-        #if len(ancestors_list) > 0:
-        #    del ancestors_list[0]
+
+        # added hack to show "magazine" in the section title
+        if len(ancestors_list) > 0 and not ancestors_list[0].slug == "magazine" and not ancestors_list[0].slug == "nextgov-categories":
+            del ancestors_list[0]
 
         return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
 

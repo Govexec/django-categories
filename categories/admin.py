@@ -86,7 +86,7 @@ class CategoryAdmin(TreeEditor, admin.ModelAdmin):
             'fields': ('parent', 'name', 'is_blog', 'thumbnail', 'active',)
         }),
         ('Meta Data', {
-            'fields': ('alternate_title', 'alternate_url', 'description', 
+            'fields': ('alternate_title', 'description',
                         'meta_keywords', 'meta_extra'),
             'classes': ('collapse',),
         }),
