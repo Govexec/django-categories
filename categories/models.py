@@ -162,8 +162,8 @@ class Category(caching.base.CachingMixin, MPTTModel):
 
         # remove top-level category from display
         ancestors_list = list(ancestors)
-        if len(ancestors_list) > 0:
-            del ancestors_list[0]
+        #if len(ancestors_list) > 0:
+        #    del ancestors_list[0]
 
         return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
 
