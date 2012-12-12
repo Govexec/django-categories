@@ -6,7 +6,6 @@ from django.contrib.contenttypes import generic
 from django.core.files.storage import get_storage_class
 from django.template.defaultfilters import slugify
 from django.utils.translation import ugettext as _
-import caching.base
 
 from mptt.models import MPTTModel
 
@@ -56,8 +55,8 @@ class Category(MPTTModel):
         max_length=100,
         help_text="An alternative title to use on pages with this category.")
     alternate_url = models.URLField(
-        blank=True, 
-        verify_exists=False, 
+        blank=True,
+        verify_exists=False,
         help_text="An alternative URL to use instead of the one derived from the category hierarchy.")
     description = models.TextField(blank=True, null=True)
     meta_keywords = models.CharField(
@@ -175,8 +174,9 @@ class Category(MPTTModel):
 
         # remove top-level category from display
         ancestors_list = list(ancestors)
+
         # added hack to show "magazine" in the section title
-        if len(ancestors_list) > 0 and not ancestors_list[0].slug == "magazine":
+        if len(ancestors_list) > 0 and not ancestors_list[0].slug == "magazine" and not ancestors_list[0].slug == "nextgov-categories":
             del ancestors_list[0]
 
         return ' > '.join([force_unicode(i.name) for i in ancestors_list]+[self.name,])
