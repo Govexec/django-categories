@@ -46,6 +46,7 @@ class Category(CategoryBase):
                   "in the &lt;head&gt;")
     is_blog = models.BooleanField(default=False, blank=False, null=False)
     
+
     @property
     def short_title(self):
         return self.name
