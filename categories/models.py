@@ -16,9 +16,10 @@ from django.db import transaction
 
 STORAGE = get_storage_class(THUMBNAIL_STORAGE)
 
-@transaction.commit_manually
 def flush_transaction():
+    autocommit = transaction.get_autocommit()
     transaction.commit()
+    transaction.set_autocommit(autocommit)
 
 
 class Category(CategoryBase):
