@@ -6,13 +6,13 @@ with customizable metadata and its own name space.
 from django.contrib import admin
 from django.db import models
 from django import forms
-from django.template.defaultfilters import slugify
 from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext as _
 
 from mptt.models import MPTTModel
 from mptt.fields import TreeForeignKey
 from mptt.managers import TreeManager
+from slugify import slugify
 
 from .editor.tree_editor import TreeEditor
 from .settings import ALLOW_SLUG_CHANGE, SLUG_TRANSLITERATOR
@@ -104,8 +104,9 @@ class CategoryBase(MPTTModel):
 
 class CategoryBaseAdminForm(forms.ModelForm):
     def clean_slug(self):
-        if self.instance is None or not ALLOW_SLUG_CHANGE:
-            self.cleaned_data['slug'] = slugify(self.cleaned_data['name'])
+        if not self.cleaned_data.get('slug', None):
+            if self.instance is None or not ALLOW_SLUG_CHANGE:
+                self.cleaned_data['slug'] = slugify(SLUG_TRANSLITERATOR(self.cleaned_data['name']))
         return self.cleaned_data['slug'][:50]
 
     def clean(self):
