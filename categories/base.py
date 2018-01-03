@@ -14,19 +14,23 @@ from mptt.models import MPTTModel
 from mptt.fields import TreeForeignKey
 from mptt.managers import TreeManager
 
-from .editor.tree_editor import TreeEditor
-from .settings import ALLOW_SLUG_CHANGE, SLUG_TRANSLITERATOR
+from categories.editor.tree_editor import TreeEditor
+from categories.querysets import CategoryQuerySet
+from categories.settings import ALLOW_SLUG_CHANGE, SLUG_TRANSLITERATOR
 
 
 class CategoryManager(models.Manager):
-    """
-    A manager that adds an "active()" method for all active categories
-    """
+    def get_query_set(self):
+        return CategoryQuerySet(self.model)
+
     def active(self):
         """
         Only categories that are active
         """
-        return self.get_query_set().filter(active=True)
+        return self.get_query_set().active()
+
+    def govexec(self):
+        return self.get_query_set().govexec()
 
 
 class CategoryBase(MPTTModel):
@@ -119,18 +123,18 @@ class CategoryBaseAdminForm(forms.ModelForm):
         opts = self._meta
 
         # Validate slug (no duplicate slugs within same tree_id)
-        kwargs = {} 
-        this_tree_slugs = []               
+        kwargs = {}
+        this_tree_slugs = []
         if self.cleaned_data.get('parent', None) is None:
             # This is a top level category, so its tree_id cannot be checked
-            pass       
-        else:                
+            pass
+        else:
             # Retrieve all other slugs in the same tree (using the tree_id of the parent category)
             parent_tree_id = int(self.cleaned_data['parent'].tree_id)
             this_tree_slugs = [c['slug'] for c in opts.model.objects.filter(
                                     tree_id=parent_tree_id).values('id', 'slug'
                                     ) if c['id'] != self.instance.id]
-        # Raise error if any other slugs in the same tree match the new category slug      
+        # Raise error if any other slugs in the same tree match the new category slug
         if self.cleaned_data['slug'] in this_tree_slugs:
             raise forms.ValidationError(_('The slug must be unique among '
                                           ' items in the same tree.'))
