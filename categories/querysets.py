@@ -8,7 +8,6 @@ class CategoryQuerySet(QuerySet):
 
     def govexec(self):
         ge_root_category = self.model.objects.get(slug='categories')
-        ge_sponsored_category = self.model.objects.get(slug='sponsored')
 
         return self.filter(
             (
@@ -16,5 +15,5 @@ class CategoryQuerySet(QuerySet):
                 Q(lft__gte=ge_root_category.lft) &
                 Q(tree_id=ge_root_category.tree_id)
             ) |
-            Q(tree_id=ge_sponsored_category.tree_id)
+            Q(slug='govexec-sponsored')
         )
