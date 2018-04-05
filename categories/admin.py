@@ -87,15 +87,20 @@ class CategoryAdmin(CategoryBaseAdmin):
     list_display = ('name', 'alternate_title', 'active', 'view_is_sponsored')
     fieldsets = (
         (None, {
-            'fields': ('parent', 'name', 'thumbnail', 'mobile_thumbnail', 'is_sponsored', 'active')
+            'fields': (
+                'parent', 'name', 'slug', 'site', 'is_sponsored', 'thumbnail',
+                'mobile_thumbnail', 'active',
+            )
         }),
         (_('Meta Data'), {
-            'fields': ('alternate_title', 'alternate_url', 'description',
-                        'meta_keywords', 'meta_extra'),
+            'fields': (
+                'alternate_title', 'alternate_url', 'description', 'meta_keywords',
+                'meta_extra'
+            ),
             'classes': ('grp-collapse',),
         }),
         (_('Advanced'), {
-            'fields': ('order', 'slug'),
+            'fields': ('order',),
             'classes': ('grp-collapse',),
         }),
     )

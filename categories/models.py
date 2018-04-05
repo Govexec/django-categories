@@ -4,13 +4,13 @@ from django.core.files.storage import get_storage_class
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db import transaction
-from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext_lazy as _
 
 from categories.base import CategoryBase
 from categories.settings import (
     RELATION_MODELS, RELATIONS, THUMBNAIL_UPLOAD_PATH, THUMBNAIL_STORAGE
 )
+from websites.base.utils import current_site as site_utils
 
 STORAGE = get_storage_class(THUMBNAIL_STORAGE)
 
@@ -105,16 +105,44 @@ class Category(CategoryBase):
     def short_title(self):
         return self.name
 
-    def get_absolute_url(self):
-        """Return a path"""
+    def get_path(self):
         if self.alternate_url:
             return self.alternate_url
-        prefix = reverse('categories_tree_list')
-        ancestors = list(self.get_ancestors()) + [self, ]
-        # remove top-level category from display
-        if len(ancestors) > 0:
-            del ancestors[0]
-        return prefix + '/'.join([force_unicode(i.slug) for i in ancestors]) + '/'
+        else:
+            urlconf = site_utils.urlconf_from_site_id(self.site_id)
+            if self.level == 1:
+                return reverse(
+                    u"category-lander",
+                    urlconf=urlconf,
+                    kwargs={
+                        "category_slug": self.slug
+                    }
+                )
+            else:
+                return reverse(
+                    u"subcategory-lander",
+                    urlconf=urlconf,
+                    kwargs={
+                        "category_slug": self.parent.slug,
+                        "subcategory_slug": self.slug,
+                    }
+                )
+
+    def get_absolute_url(self):
+        if not self.site or self.level not in [1, 2]:
+            """
+            This Category does not have a valid URL.  We're failing quietly here
+            with the hope that this will only happen in the CMS with the View on
+            Site button.
+            """
+            return ""
+
+        if site_utils.is_current_site_id(self.site_id):
+            root_url = u""
+        else:
+            root_url = site_utils.root_url_for_site_id(self.site_id)
+
+        return u"{}{}".format(root_url, self.get_path())
 
     if RELATION_MODELS:
         def get_related_content_type(self, content_type):
