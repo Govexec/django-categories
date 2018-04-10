@@ -4,18 +4,21 @@ from django.core.files.storage import get_storage_class
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db import transaction
-from django.utils.encoding import force_unicode
 from django.utils.translation import ugettext_lazy as _
 
 from categories.base import CategoryBase
-from categories.settings import (RELATION_MODELS, RELATIONS, THUMBNAIL_UPLOAD_PATH,
-                        THUMBNAIL_STORAGE)
+from categories.settings import (
+    RELATION_MODELS, RELATIONS, THUMBNAIL_UPLOAD_PATH, THUMBNAIL_STORAGE
+)
+from websites.base.utils import current_site as site_utils
 
 STORAGE = get_storage_class(THUMBNAIL_STORAGE)
+
 
 @transaction.commit_manually
 def flush_transaction():
     transaction.commit()
+
 
 class Category(CategoryBase):
     thumbnail = models.FileField(
@@ -53,19 +56,35 @@ class Category(CategoryBase):
         help_text="(Advanced) Any additional HTML to be placed verbatim "
                   "in the &lt;head&gt;")
     is_blog = models.BooleanField(default=False, blank=False, null=False)
-    show_converser_ad = models.BooleanField("Show a converser ad?", default=False,
-        help_text="Select to enable a converser ad for the category page. A 600x300 converser ad unit must be " \
-                  "active in Dart.")
+    show_converser_ad = models.BooleanField(
+        "Show a converser ad?",
+        default=False,
+        help_text=(
+            "Select to enable a converser ad for the category page. A 600x300 "
+            "converser ad unit must be active in Dart."
+        )
+    )
 
-    is_sponsored = models.BooleanField(default=False, blank=False, null=False,
-                                       help_text="This field is automatically marked as true if there are one or more sponsors assigned to this category. " \
-                                                 "It may also be manually marked true if there are no assigned sponsors.")
+    is_sponsored = models.BooleanField(
+        default=False,
+        blank=False,
+        null=False,
+        help_text=(
+            "This field is automatically marked as true if there are one or more "
+            "sponsors assigned to this category. It may also be manually marked true "
+            "if there are no assigned sponsors."
+        )
+    )
 
     sponsorships = models.ManyToManyField(
         "post_manager.ContentSponsorship",
         through="categories.CategorySponsor",
-        help_text="Adding a sponsor will automatically mark 'Is sponsored' as true. " \
-                  "Removing a sponsor or all sponsors will not affect the value of 'Is sponsored'.")
+        help_text=(
+            "Adding a sponsor will automatically mark 'Is sponsored' as true. "
+            "Removing a sponsor or all sponsors will not affect the value of "
+            "'Is sponsored'."
+        )
+    )
 
     @property
     def display_converser(self):
@@ -86,16 +105,44 @@ class Category(CategoryBase):
     def short_title(self):
         return self.name
 
-    def get_absolute_url(self):
-        """Return a path"""
+    def get_path(self):
         if self.alternate_url:
             return self.alternate_url
-        prefix = reverse('categories_tree_list')
-        ancestors = list(self.get_ancestors()) + [self, ]
-        # remove top-level category from display
-        if len(ancestors) > 0:
-            del ancestors[0]
-        return prefix + '/'.join([force_unicode(i.slug) for i in ancestors]) + '/'
+        else:
+            urlconf = site_utils.urlconf_from_site_id(self.site_id)
+            if self.level == 1:
+                return reverse(
+                    u"category-lander",
+                    urlconf=urlconf,
+                    kwargs={
+                        "category_slug": self.slug
+                    }
+                )
+            else:
+                return reverse(
+                    u"subcategory-lander",
+                    urlconf=urlconf,
+                    kwargs={
+                        "category_slug": self.parent.slug,
+                        "subcategory_slug": self.slug,
+                    }
+                )
+
+    def get_absolute_url(self):
+        if not self.site or self.level not in [1, 2]:
+            """
+            This Category does not have a valid URL.  We're failing quietly here
+            with the hope that this will only happen in the CMS with the View on
+            Site button.
+            """
+            return ""
+
+        if site_utils.is_current_site_id(self.site_id):
+            root_url = u""
+        else:
+            root_url = site_utils.root_url_for_site_id(self.site_id)
+
+        return u"{}{}".format(root_url, self.get_path())
 
     if RELATION_MODELS:
         def get_related_content_type(self, content_type):
@@ -164,16 +211,19 @@ class CategoryRelation(models.Model):
         ContentType, limit_choices_to=CATEGORY_RELATION_LIMITS, verbose_name=_('content type'))
     object_id = models.PositiveIntegerField(verbose_name=_('object id'))
     content_object = generic.GenericForeignKey('content_type', 'object_id')
-    relation_type = models.CharField(verbose_name=_('relation type'),
+    relation_type = models.CharField(
+        verbose_name=_('relation type'),
         max_length="200",
         blank=True,
         null=True,
-        help_text=_("A generic text field to tag a relation, like 'leadphoto'."))
+        help_text=_("A generic text field to tag a relation, like 'leadphoto'.")
+    )
 
     objects = CategoryRelationManager()
 
     def __unicode__(self):
         return u"CategoryRelation"
+
 
 class CategorySponsor(models.Model):
     category = models.ForeignKey(Category)

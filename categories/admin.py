@@ -4,12 +4,13 @@ from django import forms
 from django.utils.translation import ugettext_lazy as _
 
 from .genericcollection import GenericCollectionTabularInline
-from .settings import RELATION_MODELS, JAVASCRIPT_URL, REGISTER_ADMIN
+from .settings import RELATION_MODELS, JAVASCRIPT_URL
 from .models import Category
 from .base import CategoryBaseAdminForm, CategoryBaseAdmin
 from .settings import MODEL_REGISTRY
 
 from categories import models as category_models
+
 
 class NullTreeNodeChoiceField(forms.ModelChoiceField):
     """A ModelChoiceField for tree nodes."""
@@ -22,8 +23,12 @@ class NullTreeNodeChoiceField(forms.ModelChoiceField):
         Creates labels which represent the tree level of each node when
         generating option labels.
         """
-        return u'%s %s' % (self.level_indicator * getattr(
-                                        obj, obj._mptt_meta.level_attr), obj)
+        return u'%s %s' % (
+            self.level_indicator * getattr(obj, obj._mptt_meta.level_attr),
+            obj
+        )
+
+
 if RELATION_MODELS:
     from .models import CategoryRelation
 
@@ -41,6 +46,7 @@ class CategoryAdminForm(CategoryBaseAdminForm):
         else:
             return self.cleaned_data['alternate_title']
 
+
 class CategorySponsorForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(CategorySponsorForm, self).__init__(*args, **kwargs)
@@ -56,6 +62,7 @@ class CategorySponsorInline(TabularInline):
     ordering = ('order',)
     raw_id_fields = ('sponsorship',)
     sortable_field_name = 'order'
+
 
 class SponsoredCategoryListFilter(admin.SimpleListFilter):
     title = u'Sponsored'
@@ -74,20 +81,26 @@ class SponsoredCategoryListFilter(admin.SimpleListFilter):
             return queryset.filter(is_sponsored=False)
         return queryset
 
+
 class CategoryAdmin(CategoryBaseAdmin):
     form = CategoryAdminForm
     list_display = ('name', 'alternate_title', 'active', 'view_is_sponsored')
     fieldsets = (
         (None, {
-            'fields': ('parent', 'name', 'thumbnail', 'mobile_thumbnail', 'is_sponsored', 'active')
+            'fields': (
+                'parent', 'name', 'slug', 'site', 'is_sponsored', 'thumbnail',
+                'mobile_thumbnail', 'active',
+            )
         }),
         (_('Meta Data'), {
-            'fields': ('alternate_title', 'alternate_url', 'description',
-                        'meta_keywords', 'meta_extra'),
+            'fields': (
+                'alternate_title', 'alternate_url', 'description', 'meta_keywords',
+                'meta_extra'
+            ),
             'classes': ('grp-collapse',),
         }),
         (_('Advanced'), {
-            'fields': ('order', 'slug'),
+            'fields': ('order',),
             'classes': ('grp-collapse',),
         }),
     )
@@ -124,6 +137,7 @@ class CategoryAdmin(CategoryBaseAdmin):
         return obj.is_sponsored
     view_is_sponsored.boolean = True
     view_is_sponsored.short_description = u"is sponsored"
+
 
 admin.site.register(Category, CategoryAdmin)
 
